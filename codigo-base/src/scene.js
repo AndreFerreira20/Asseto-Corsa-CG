@@ -50,7 +50,7 @@ function criarCena(motor, canvas) {
     matAsfalto.specularColor = new BABYLON.Color3(0, 0, 0);
     asfalto.material = matAsfalto;
 
-    criarTwingo(cena);
+    const carro = criarTwingo(cena);
 
     return cena;
 }

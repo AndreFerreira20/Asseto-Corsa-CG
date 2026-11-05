@@ -96,10 +96,33 @@ function criarTwingo(cena) {
         { width: 0.3, height: 0.35, depth: LARGURA + 0.06 },
         -1.68, 0.55, 0, matParachoque);
 
+    // Lampada (mesh) de cada farol
     for (const lado of [-1, 1]) {
         criarCaixa("farol" + lado,
             { width: 0.1, height: 0.22, depth: 0.35 },
             1.7, 0.88, 0.5 * lado, matFarol);
+    }
+
+    // Luzes dos farois: um SpotLight (cone de luz) em cada farol, apontando
+    // pra frente do carro (+X). Ficam penduradas no "raiz", entao acompanham
+    // o carro quando ele se mover/girar no futuro.
+    //
+    // SpotLight(nome, posicao, direcao, angulo do cone, expoente, cena)
+    const luzesFarois = [];
+    for (const lado of [-1, 1]) {
+        const luzFarol = new BABYLON.SpotLight(
+            "luzFarol" + lado,
+            new Vector3(1.75, 0.88, 0.5 * lado),   // logo na frente do mesh do farol
+            new Vector3(1, -0.15, 0),              // aponta pra frente, levemente pra baixo
+            Math.PI / 6,                           // abertura do cone (~30 graus, mais estreito)
+            20,                                    // concentracao do feixe (mais centrado)
+            cena
+        );
+        luzFarol.diffuse = new Color3(1, 0.96, 0.8);  // branco-amarelado
+        luzFarol.intensity = 6.0;
+        luzFarol.range = 50;                          // alcance do feixe
+        luzFarol.parent = raiz;                       // acompanha o carro
+        luzesFarois.push(luzFarol);
     }
 
     // ---------------------------------------------------------------------
@@ -123,5 +146,6 @@ function criarTwingo(cena) {
     criarRoda("rodaTraseiraEsq",  -1.15,  zRodas);
     criarRoda("rodaTraseiraDir",  -1.15, -zRodas);
 
-    return raiz;
+    // Devolve a raiz do carro e as luzes dos farois (pra ligar/desligar depois)
+    return { raiz, luzesFarois };
 }
