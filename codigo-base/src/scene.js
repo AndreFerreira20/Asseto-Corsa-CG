@@ -52,5 +52,46 @@ function criarCena(motor, canvas) {
 
     const carro = criarTwingo(cena);
 
+    // -----------------------------------------------------------------
+    // Estado dia/noite (cor do ceu + intensidade das luzes do ambiente)
+    const DIA = {
+        ceu: new BABYLON.Color3(0.6, 0.78, 0.92),  
+        ambiente: 0.8,
+        solLigado: true,
+    };
+    const NOITE = {
+        ceu: new BABYLON.Color3(0.03, 0.04, 0.1),  
+        ambiente: 0.15,                           
+        solLigado: false,
+    };
+
+    let ehNoite = false;
+
+    function aplicarPeriodo(periodo) {
+        cena.clearColor = periodo.ceu;
+        luzAmbiente.intensity = periodo.ambiente;
+        luzSol.setEnabled(periodo.solLigado);
+    }
+
+    // Controle das luzes por tecla
+    //   H -> liga/desliga os dois farois do carro
+    //   J -> alterna entre dia e noite (ceu + sol + ambiente)
+    window.addEventListener("keydown", (evento) => {
+        const tecla = evento.key.toLowerCase();
+
+        if (tecla === "h") {
+            // Inverte o estado atual dos farois (usa o primeiro como referencia)
+            const ligar = !carro.luzesFarois[0].isEnabled();
+            for (const farol of carro.luzesFarois) {
+                farol.setEnabled(ligar);
+            }
+        }
+
+        if (tecla === "j") {
+            ehNoite = !ehNoite;
+            aplicarPeriodo(ehNoite ? NOITE : DIA);
+        }
+    });
+
     return cena;
 }
