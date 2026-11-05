@@ -11,13 +11,20 @@ function criarCameras(cena, carro) {
     terceiraPessoa.rotation.x = 0.25;        // inclina para baixo
 
     // camera no capo
-    // aparece soh a ponta do capo
     const capo = new FreeCamera("Capo", new Vector3(1.25, 1.2, 0), cena);
     capo.parent = carro;
     capo.rotation.y = Math.PI / 2;
     capo.rotation.x = 0.1;
 
     const cameras = [terceiraPessoa, capo];
-    
+
+    // projecao perspectiva 
+    for (const cam of cameras) {
+        cam.mode = Camera.PERSPECTIVE_CAMERA; // tipo de projecao
+        cam.fov = 0.8;                        // abertura vertical, em radianos (~46°)
+        cam.minZ = 0.1;                       // plano near 
+        cam.maxZ = 500;                       // plano far
+    }
+
     return cameras;
 }
