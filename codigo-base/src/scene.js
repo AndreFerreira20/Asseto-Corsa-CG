@@ -5,19 +5,6 @@ function criarCena(motor, canvas) {
     const cena = new BABYLON.Scene(motor);
     cena.clearColor = new BABYLON.Color3(0.6, 0.78, 0.92);
 
-    // Câmera orbital em volta do centro do carro
-    const camera = new BABYLON.ArcRotateCamera(
-        "camera",
-        -Math.PI / 2.5,                    // angulo horizontal
-        Math.PI / 2.8,                     // angulo vertical
-        9,                                 // distancia do alvo
-        new BABYLON.Vector3(0, 0.8, 0),
-        cena
-    );
-    camera.attachControl(canvas, true);
-    camera.lowerRadiusLimit = 4;
-    camera.upperRadiusLimit = 20;
-
     // Uma luz ambiente e uma direcional 
     const luzAmbiente = new BABYLON.HemisphericLight("luzAmbiente", new BABYLON.Vector3(0, 1, 0), cena);
     luzAmbiente.intensity = 0.8;
@@ -50,7 +37,18 @@ function criarCena(motor, canvas) {
     matAsfalto.specularColor = new BABYLON.Color3(0, 0, 0);
     asfalto.material = matAsfalto;
 
-    criarTwingo(cena);
+    carro = criarTwingo(cena);
+
+    camera = criarCameras(cena, carro);
+    window.addEventListener("keydown", (evento) => {
+        const tecla = evento.key.toLocaleLowerCase();
+        if (tecla === "1") cena.activeCamera = camera[0]; // 3a pessoa
+        if (tecla === "2") cena.activeCamera = camera[1]; // capo
+        if (tecla === "v") cena.activeCamera = (cena.activeCamera === camera[0] ? camera[1] : camera[0]); // 3a pessoa
+    });
+
+    cena.activeCamera = camera[0]; // 3a pessoa
+    // cena.activeCamera = camera[1]; // capo
 
     return cena;
 }
