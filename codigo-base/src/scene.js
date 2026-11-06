@@ -81,7 +81,7 @@ function criarCena(motor, canvas) {
     });
 
 
-    camera = criarCameras(cena, carro);
+    camera = criarCameras(cena, carro.raiz);
     window.addEventListener("keydown", (evento) => {
         const tecla = evento.key.toLocaleLowerCase();
         if (tecla === "1") cena.activeCamera = camera[0]; // 3a pessoa
