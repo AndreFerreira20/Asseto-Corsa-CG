@@ -39,6 +39,9 @@ function criarCena(motor, canvas) {
 
     const carro = criarTwingo(cena);
 
+    // Liga o controle de movimento do carro (W A S D)
+    habilitarControles(carro, cena);
+
     // -----------------------------------------------------------------
     // Estado dia/noite (cor do ceu + intensidade das luzes do ambiente)
     const DIA = {

@@ -149,3 +149,93 @@ function criarTwingo(cena) {
     // Devolve a raiz do carro e as luzes dos farois (pra ligar/desligar depois)
     return { raiz, luzesFarois };
 }
+
+// ---------------------------------------------------------------------
+// Controle de movimento do carro (teclas W A S D)
+// O movimento usa o deltaTime do motor pra ficar independente do FPS, e aplica
+// aceleração + atrito, de modo que o carro ganha e perde velocidade suavemente
+function habilitarControles(carro, cena) {
+    const { Vector3 } = BABYLON;
+    const raiz = carro.raiz;
+
+    // Parametros de dirigibilidade
+    const ACELERACAO    = 18.0;   // quao rapido ganha velocidade com W
+    const VEL_MAXIMA    = 22.0;   // teto de velocidade pra frente
+    const VEL_MAX_RE    = 8.0;    // teto de velocidade de ré
+    const ATRITO        = 10.0;   // desaceleracao quando nenhuma tecla de avanço
+    const FREIO         = 30.0;   // desaceleracao extra quando pressiona S andando pra frente
+    const VEL_ESTERCO   = 2.7;    // rad/s de giro com o volante no máximo e carro em velocidade de referencia
+    const VEL_REFERENCIA = 10.0;  // velocidade onde o esterço atinge o valor cheio
+    const VOLANTE_VEL   = 3.2;    // rad/s de quão rápido o volante gira em direção ao máximo
+    const VOLANTE_RETORNO = 5.0;  // rad/s de quão rápido o volante volta ao centro quando solto
+
+    const teclas = {};
+    window.addEventListener("keydown", (e) => { teclas[e.key.toLowerCase()] = true; });
+    window.addEventListener("keyup",   (e) => { teclas[e.key.toLowerCase()] = false; });
+
+    let velocidade = 0;
+
+    // Ângulo do volante, de -1 (esquerda) a +1 (direita)
+    let volante = 0;
+
+    cena.onBeforeRenderObservable.add(() => {
+        const dt = cena.getEngine().getDeltaTime() / 1000;
+        if (dt <= 0) return;
+
+        const frente = teclas["w"];
+        const re     = teclas["s"];
+
+        // --- Atualiza a velocidade (aceleração / freio / atrito) ---
+        if (frente) {
+            velocidade += ACELERACAO * dt;
+        } else if (re) {
+            // S freia com mais força se ainda estiver indo pra frente,
+            // senão acelera em ré
+            if (velocidade > 0) {
+                velocidade -= FREIO * dt;
+            } else {
+                velocidade -= ACELERACAO * dt;
+            }
+        } else {
+            // Nenhuma tecla de avanço: atrito puxa a velocidade pra zero
+            if (velocidade > 0) {
+                velocidade = Math.max(0, velocidade - ATRITO * dt);
+            } else if (velocidade < 0) {
+                velocidade = Math.min(0, velocidade + ATRITO * dt);
+            }
+        }
+
+        // Limita aos tetos de velocidade
+        velocidade = Math.max(-VEL_MAX_RE, Math.min(VEL_MAXIMA, velocidade));
+
+        // A/D empurram o volante gradualmente pros lados; sem tecla, ele
+        // retorna ao centro. Clamp em [-1, 1]
+        const querEsquerda = teclas["a"];
+        const querDireita  = teclas["d"];
+
+        if (querEsquerda && !querDireita) {
+            volante -= VOLANTE_VEL * dt;
+        } else if (querDireita && !querEsquerda) {
+            volante += VOLANTE_VEL * dt;
+        } else {
+            // Retorna ao centro
+            if (volante > 0) volante = Math.max(0, volante - VOLANTE_RETORNO * dt);
+            else if (volante < 0) volante = Math.min(0, volante + VOLANTE_RETORNO * dt);
+        }
+        volante = Math.max(-1, Math.min(1, volante));
+
+        // --- Esterço: só gira o carro se estiver em movimento ---
+        if (Math.abs(velocidade) > 0.05 && Math.abs(volante) > 0.001) {
+            // Fator proporcional à velocidade (até o valor cheio): vira pouco
+            // a baixa velocidade e mais conforme acelera.
+            const fator = Math.min(1, Math.abs(velocidade) / VEL_REFERENCIA);
+            // Em ré, inverte o sentido do giro (como num carro real dando ré)
+            const sinal = velocidade >= 0 ? 1 : -1;
+            raiz.rotation.y += VEL_ESTERCO * volante * fator * sinal * dt;
+        }
+
+        const ang = raiz.rotation.y;
+        const dirFrente = new Vector3(Math.cos(ang), 0, -Math.sin(ang));
+        raiz.position.addInPlace(dirFrente.scale(velocidade * dt));
+    });
+}
