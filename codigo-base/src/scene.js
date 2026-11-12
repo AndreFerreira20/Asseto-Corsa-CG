@@ -12,28 +12,84 @@ function criarCena(motor, canvas) {
     const luzSol = new BABYLON.DirectionalLight("luzSol", new BABYLON.Vector3(-1, -2, -1), cena);
     luzSol.intensity = 0.6;
 
-    // Textura da grama
-    const matGramaClara = new BABYLON.StandardMaterial("matGramaClara", cena);
-    matGramaClara.diffuseColor = new BABYLON.Color3(0.4, 0.62, 0.32);
-    matGramaClara.specularColor = new BABYLON.Color3(0, 0, 0);
+    // Caminho base das texturas (relativo ao index.html)
+    const PASTA_TEXTURAS = "./src/assets/texturas/";
 
-    const matGramaEscura = new BABYLON.StandardMaterial("matGramaEscura", cena);
-    matGramaEscura.diffuseColor = new BABYLON.Color3(0.3, 0.5, 0.25);
-    matGramaEscura.specularColor = new BABYLON.Color3(0, 0, 0);
+    // Tamanho em metros que cada repeticao da textura cobre no chao.
+    // Como a repeticao e calculada a partir do tamanho real do mesh,
+    // a textura fica na mesma escala no comprimento e na largura e
+    // nao estica. Valor menor deixa o padrao mais miudo.
+    const METROS_POR_REPETICAO_GRAMA = 4;
+    const METROS_POR_REPETICAO_ASFALTO = 3;
+
+    const GRAMA_LARGURA = 10;
+    const GRAMA_COMPRIMENTO = 100;
+
+    // Textura da grama
+    const matGrama = new BABYLON.StandardMaterial("matGrama", cena);
+    const texGrama = new BABYLON.Texture(PASTA_TEXTURAS + "grama.jpg", cena);
+    texGrama.uScale = GRAMA_LARGURA / METROS_POR_REPETICAO_GRAMA;
+    texGrama.vScale = GRAMA_COMPRIMENTO / METROS_POR_REPETICAO_GRAMA;
+    matGrama.diffuseTexture = texGrama;
+    matGrama.specularColor = new BABYLON.Color3(0, 0, 0);
 
     for (let i = 0; i < 10; i++) {
-        const faixa = BABYLON.MeshBuilder.CreateGround("grama" + i, { width: 10, height: 100 }, cena);
-        faixa.position.x = -45 + i * 10;
-        faixa.material = i % 2 === 0 ? matGramaClara : matGramaEscura;
+        const faixa = BABYLON.MeshBuilder.CreateGround("grama" + i, { width: GRAMA_LARGURA, height: GRAMA_COMPRIMENTO }, cena);
+        faixa.position.x = -45 + i * GRAMA_LARGURA;
+        faixa.material = matGrama;
     }
 
-    // Faixa de asfalto ao longo do eixo X
-    // Tem 0.02 de altura pra nao brigar com o chao (z-fighting).
-    const asfalto = BABYLON.MeshBuilder.CreateBox("asfalto", { width: 100, height: 0.02, depth: 7 }, cena);
+    // Faixa de asfalto ao longo do eixo X.
+    // Usa uma caixa fina (altura 0.02) pra formar um pequeno degrau
+    // acima da grama, como asfalto de verdade. Fica em y = 0.01 pra
+    // a face de cima nao brigar com o chao (z-fighting).
+    //
+    // Textura do asfalto (Poly Haven asphalt_track 1k):
+    //   asfalto_polyhaven.jpg         -> cor (diffuse)
+    //   asfalto_polyhaven_normal.jpg  -> relevo (normal GL)
+    const ARQUIVO_ASFALTO = "asfalto_polyhaven.jpg";
+    const ARQUIVO_ASFALTO_NORMAL = "asfalto_polyhaven_normal.jpg";
+
+    const ASFALTO_COMPRIMENTO = 100; // ao longo de X
+    const ASFALTO_LARGURA = 7;       // ao longo de Z
+    const ASFALTO_ALTURA = 0.02;
+
+    // Quantas vezes a textura repete em cada direcao, proporcional ao
+    // tamanho real em metros. Sem isso, a caixa estica a imagem na face
+    // de cima porque ela e muito mais comprida (X) do que larga (Z).
+    const REP_X = ASFALTO_COMPRIMENTO / METROS_POR_REPETICAO_ASFALTO;
+    const REP_Z = ASFALTO_LARGURA / METROS_POR_REPETICAO_ASFALTO;
+    const REP_Y = ASFALTO_ALTURA / METROS_POR_REPETICAO_ASFALTO;
+
+    // faceUV define a regiao da textura (Vector4: u1, v1, u2, v2) por face.
+    // Ordem das faces no CreateBox: 0 +Z, 1 -Z, 2 +X, 3 -X, 4 +Y (cima), 5 -Y.
+    const faceUV = [
+        new BABYLON.Vector4(0, 0, REP_X, REP_Y), // +Z lateral comprida
+        new BABYLON.Vector4(0, 0, REP_X, REP_Y), // -Z lateral comprida
+        new BABYLON.Vector4(0, 0, REP_Z, REP_Y), // +X ponta
+        new BABYLON.Vector4(0, 0, REP_Z, REP_Y), // -X ponta
+        new BABYLON.Vector4(0, 0, REP_X, REP_Z), // +Y face de cima (a que importa)
+        new BABYLON.Vector4(0, 0, REP_X, REP_Z), // -Y face de baixo
+    ];
+
+    const asfalto = BABYLON.MeshBuilder.CreateBox("asfalto", {
+        width: ASFALTO_COMPRIMENTO,
+        height: ASFALTO_ALTURA,
+        depth: ASFALTO_LARGURA,
+        faceUV: faceUV,
+        wrap: true,
+    }, cena);
     asfalto.position.y = 0.01;
-    
+
     const matAsfalto = new BABYLON.StandardMaterial("matAsfalto", cena);
-    matAsfalto.diffuseColor = new BABYLON.Color3(0.22, 0.23, 0.25);
+    const texAsfalto = new BABYLON.Texture(PASTA_TEXTURAS + ARQUIVO_ASFALTO, cena);
+    matAsfalto.diffuseTexture = texAsfalto;
+
+    // Normal map: da relevo ao asfalto sem adicionar geometria. Usa as
+    // mesmas coordenadas UV (faceUV) da cor, entao segue a repeticao.
+    const texAsfaltoNormal = new BABYLON.Texture(PASTA_TEXTURAS + ARQUIVO_ASFALTO_NORMAL, cena);
+    matAsfalto.bumpTexture = texAsfaltoNormal;
+
     matAsfalto.specularColor = new BABYLON.Color3(0, 0, 0);
     asfalto.material = matAsfalto;
 
