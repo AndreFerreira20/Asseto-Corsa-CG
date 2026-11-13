@@ -45,10 +45,10 @@ function criarCena(motor, canvas) {
     // a face de cima nao brigar com o chao (z-fighting).
     //
     // Textura do asfalto (Poly Haven asphalt_track 1k):
-    //   asfalto_polyhaven.jpg         -> cor (diffuse)
-    //   asfalto_polyhaven_normal.jpg  -> relevo (normal GL)
+    //   asfalto_polyhaven.jpg                  -> cor (diffuse)
+    //   asfalto_polyhaven_normal_filtrado.jpg  -> relevo (normal GL)
     const ARQUIVO_ASFALTO = "asfalto_polyhaven.jpg";
-    const ARQUIVO_ASFALTO_NORMAL = "asfalto_polyhaven_normal.jpg";
+    const ARQUIVO_ASFALTO_NORMAL = "asfalto_polyhaven_normal_filtrado.jpg";
 
     const ASFALTO_COMPRIMENTO = 100; // ao longo de X
     const ASFALTO_LARGURA = 7;       // ao longo de Z
@@ -88,6 +88,8 @@ function criarCena(motor, canvas) {
     // Normal map: da relevo ao asfalto sem adicionar geometria. Usa as
     // mesmas coordenadas UV (faceUV) da cor, entao segue a repeticao.
     const texAsfaltoNormal = new BABYLON.Texture(PASTA_TEXTURAS + ARQUIVO_ASFALTO_NORMAL, cena);
+    
+    texAsfaltoNormal.level = 1; // Quanto maior, mais fraco o relevo. 1 = padrao (forte demais com o farol).
     matAsfalto.bumpTexture = texAsfaltoNormal;
 
     matAsfalto.specularColor = new BABYLON.Color3(0, 0, 0);
