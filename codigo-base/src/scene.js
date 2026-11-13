@@ -145,9 +145,10 @@ function criarCena(motor, canvas) {
     camera = criarCameras(cena, carro.raiz);
     window.addEventListener("keydown", (evento) => {
         const tecla = evento.key.toLocaleLowerCase();
-        if (tecla === "1") cena.activeCamera = camera[0]; // 3a pessoa
-        if (tecla === "2") cena.activeCamera = camera[1]; // capo
-        if (tecla === "v") cena.activeCamera = (cena.activeCamera === camera[0] ? camera[1] : camera[0]); // 3a pessoa
+        if (tecla === "1") cena.activeCamera = camera[0]; // capo
+        if (tecla === "2") cena.activeCamera = camera[1]; // 360
+        if (tecla === "3") cena.activeCamera = camera[2]; // 3a pessoa
+        if (tecla === "v") cena.activeCamera = (cena.activeCamera === camera[0] ? camera[2] : camera[0]); // alterna 1a e 3a
     });
 
     cena.activeCamera = camera[0]; // 3a pessoa
