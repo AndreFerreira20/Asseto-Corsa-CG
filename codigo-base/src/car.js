@@ -36,6 +36,17 @@ function criarTwingo(cena) {
     const matPneu = criarMaterial("matPneu", 0.07, 0.07, 0.07);
     const matFarol = criarMaterial("matFarol", 0.95, 0.95, 1);
 
+
+    // Textura
+    const TEXTURA_LATARIA = "./src/assets/texturas/";
+
+    const texturaLataria = new BABYLON.Texture(TEXTURA_LATARIA + "lataria.jpg", cena);
+    texturaLataria.uScale = 4;
+    texturaLataria.vScale = 4;
+
+    // A textura e multiplicada pelo diffuseColor vermelho do matCorpo
+    matCorpo.diffuseTexture = texturaLataria;
+
     // ---------------------------------------------------------------------
     // Corpo do carro: perfil lateral, da frente embaixo até a traseira embaixo
 
