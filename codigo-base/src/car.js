@@ -41,8 +41,8 @@ function criarTwingo(cena) {
     const TEXTURA_LATARIA = "./src/assets/texturas/";
 
     const texturaLataria = new BABYLON.Texture(TEXTURA_LATARIA + "lataria.jpg", cena);
-    texturaLataria.uScale = 4;
-    texturaLataria.vScale = 4;
+    texturaLataria.uScale = 1;
+    texturaLataria.vScale = 1;
 
     // A textura e multiplicada pelo diffuseColor vermelho do matCorpo
     matCorpo.diffuseTexture = texturaLataria;
@@ -71,6 +71,32 @@ function criarTwingo(cena) {
     Corpo.material = matCorpo;
     Corpo.parent = raiz;
     Corpo.convertToFlatShadedMesh();
+
+    // ---------------------------------------------------------------------
+    // escolhe o plano conforme pra onde a face aponta.
+    const posicoes = Corpo.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+    const normais = Corpo.getVerticesData(BABYLON.VertexBuffer.NormalKind);
+    const uvs = [];
+  
+    for (let i = 0; i < posicoes.length; i += 3) {
+        const x = posicoes[i];
+        const y = posicoes[i + 1];
+        const z = posicoes[i + 2];
+        const normalX = Math.abs(normais[i]);
+        const normalY = Math.abs(normais[i + 1]);
+        const normalZ = Math.abs(normais[i + 2]);
+  
+      if (normalZ >= normalX && normalZ >= normalY) {
+          uvs.push(x, y);   // lateral (aponta em Z)
+      } else if (normalY >= normalX) {
+          uvs.push(x, z);   // teto, capo, para-brisa e fundo (aponta em Y)
+      } else {
+          uvs.push(z, y);   // frente e traseira (aponta em X)
+      }
+    }
+  
+    Corpo.setVerticesData(BABYLON.VertexBuffer.UVKind, uvs);
+  
 
     // ---------------------------------------------------------------------
     // Vidros
