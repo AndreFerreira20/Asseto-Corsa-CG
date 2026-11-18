@@ -196,13 +196,15 @@ function habilitarControles(carro, cena) {
     const raiz = carro.raiz;
 
     // Parametros de dirigibilidade
-    const ACELERACAO    = 18.0;   // quao rapido ganha velocidade com W
-    const VEL_MAXIMA    = 22.0;   // teto de velocidade pra frente
-    const VEL_MAX_RE    = 8.0;    // teto de velocidade de ré
+    const ACELERACAO    = 14.0;   // quao rapido ganha velocidade com W (carro lento)
+    const VEL_MAXIMA    = 40.0;   // teto de velocidade pra frente
+    const VEL_MAX_RE    = 10.0;   // teto de velocidade de ré
     const ATRITO        = 10.0;   // desaceleracao quando nenhuma tecla de avanço
-    const FREIO         = 30.0;   // desaceleracao extra quando pressiona S andando pra frente
-    const VEL_ESTERCO   = 2.7;    // rad/s de giro com o volante no máximo e carro em velocidade de referencia
-    const VEL_REFERENCIA = 10.0;  // velocidade onde o esterço atinge o valor cheio
+    const FREIO         = 36.0;   // desaceleracao extra quando pressiona S andando pra frente
+    const VEL_ESTERCO   = 2.7;    // rad/s de giro com o volante no máximo
+    const VEL_ESTERCO_MIN = 8.0;  // abaixo disso o carro quase nao gira (parado/lento)
+    const VEL_ESTERCO_CHEIO = 16.0; // esterço cheio nesta velocidade
+    const VEL_ESTERCO_MINIMO = 0.35; // fracao de giro que sobra em alta velocidade
     const VOLANTE_VEL   = 3.2;    // rad/s de quão rápido o volante gira em direção ao máximo
     const VOLANTE_RETORNO = 5.0;  // rad/s de quão rápido o volante volta ao centro quando solto
 
@@ -263,9 +265,21 @@ function habilitarControles(carro, cena) {
 
         // --- Esterço: só gira o carro se estiver em movimento ---
         if (Math.abs(velocidade) > 0.05 && Math.abs(volante) > 0.001) {
-            // Fator proporcional à velocidade (até o valor cheio): vira pouco
-            // a baixa velocidade e mais conforme acelera.
-            const fator = Math.min(1, Math.abs(velocidade) / VEL_REFERENCIA);
+            const velAbs = Math.abs(velocidade);
+
+            // Em baixa velocidade o carro gira pouco (sobe de 0 a 1 ate VEL_ESTERCO_MIN).
+            const fatorBaixa = Math.min(1, velAbs / VEL_ESTERCO_MIN);
+
+            // Em alta velocidade o carro responde menos ao volante: acima de
+            // VEL_ESTERCO_CHEIO, o giro cai ate VEL_ESTERCO_MINIMO na velocidade
+            // maxima (fica "pior pra virar" quanto mais rapido).
+            let fatorAlta = 1;
+            if (velAbs > VEL_ESTERCO_CHEIO) {
+                const t = Math.min(1, (velAbs - VEL_ESTERCO_CHEIO) / (VEL_MAXIMA - VEL_ESTERCO_CHEIO));
+                fatorAlta = 1 - t * (1 - VEL_ESTERCO_MINIMO);
+            }
+
+            const fator = fatorBaixa * fatorAlta;
             // Em ré, inverte o sentido do giro (como num carro real dando ré)
             const sinal = velocidade >= 0 ? 1 : -1;
             raiz.rotation.y += VEL_ESTERCO * volante * fator * sinal * dt;
