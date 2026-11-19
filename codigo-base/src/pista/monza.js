@@ -244,6 +244,7 @@ function criarPistaMonza(cena) {
         pontosCaminho,
         pontosControle,
         larguraPista: LARGURA_PISTA,
+        indiceLargada: idxLargada,
         largada: {
             x: pLargada.x,
             z: pLargada.z,
