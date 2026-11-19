@@ -191,13 +191,13 @@ function criarTwingo(cena) {
 // Controle de movimento do carro (teclas W A S D)
 // O movimento usa o deltaTime do motor pra ficar independente do FPS, e aplica
 // aceleração + atrito, de modo que o carro ganha e perde velocidade suavemente
-function habilitarControles(carro, cena) {
+function habilitarControles(carro, cena, pista, linhasCerca) {
     const { Vector3 } = BABYLON;
     const raiz = carro.raiz;
 
     // Parametros de dirigibilidade
-    const ACELERACAO    = 14.0;   // quao rapido ganha velocidade com W (carro lento)
-    const VEL_MAXIMA    = 40.0;   // teto de velocidade pra frente
+    const ACELERACAO    = 9.0;   // quao rapido ganha velocidade com W (carro lento)
+    const VEL_MAXIMA    = 27.0;   // teto de velocidade pra frente
     const VEL_MAX_RE    = 10.0;   // teto de velocidade de ré
     const ATRITO        = 10.0;   // desaceleracao quando nenhuma tecla de avanço
     const FREIO         = 36.0;   // desaceleracao extra quando pressiona S andando pra frente
@@ -207,6 +207,52 @@ function habilitarControles(carro, cena) {
     const VEL_ESTERCO_MINIMO = 0.35; // fracao de giro que sobra em alta velocidade
     const VOLANTE_VEL   = 3.2;    // rad/s de quão rápido o volante gira em direção ao máximo
     const VOLANTE_RETORNO = 5.0;  // rad/s de quão rápido o volante volta ao centro quando solto
+
+    // --- Grama e colisao (dependem de onde o carro esta na pista) ---
+    const VEL_MAX_GRAMA = 10.0;   // teto de velocidade quando esta na grama
+    const DESACEL_GRAMA = 60.0;   // quao rapido a velocidade cai ate o teto da grama
+    const MARGEM_CERCA  = 0.5;    // o carro para esta distancia antes da cerca
+    const meiaPista = pista ? pista.larguraPista / 2 : 999;
+    const pontosPista = pista ? pista.pontosCaminho : null;
+    // As duas bordas da cerca (listas de pontos), pra medir distancia ate
+    // os SEGMENTOS da cerca, nao so os pontos (senao da pra passar nos vaos).
+    const bordasCerca = linhasCerca || null;
+
+    // Menor distancia do ponto (x,z) ate a linha central da pista.
+    // Usada pra saber se o carro esta no asfalto ou na grama.
+    function distanciaDaPista(x, z) {
+        if (!pontosPista) return 0;
+        let menor = Infinity;
+        for (const p of pontosPista) {
+            const d = (p.x - x) ** 2 + (p.z - z) ** 2;
+            if (d < menor) menor = d;
+        }
+        return Math.sqrt(menor);
+    }
+
+    // Menor distancia do ponto (x,z) ate a cerca. Mede a distancia a cada
+    // SEGMENTO (linha entre dois pontos consecutivos), nao so aos pontos,
+    // pra nao haver vaos por onde o carro atravessa.
+    function distanciaDaCerca(x, z) {
+        if (!bordasCerca) return Infinity;
+        let menor = Infinity;
+        for (const borda of bordasCerca) {
+            for (let i = 0; i < borda.length - 1; i++) {
+                const a = borda[i];
+                const b = borda[i + 1];
+                // projecao do ponto no segmento a->b, limitada a [0,1]
+                const abx = b.x - a.x, abz = b.z - a.z;
+                const apx = x - a.x, apz = z - a.z;
+                const lenAb = abx * abx + abz * abz || 1;
+                let t = (apx * abx + apz * abz) / lenAb;
+                t = Math.max(0, Math.min(1, t));
+                const cx = a.x + abx * t, cz = a.z + abz * t;
+                const d = (cx - x) ** 2 + (cz - z) ** 2;
+                if (d < menor) menor = d;
+            }
+        }
+        return Math.sqrt(menor);
+    }
 
     const teclas = {};
     window.addEventListener("keydown", (e) => { teclas[e.key.toLowerCase()] = true; });
@@ -242,6 +288,15 @@ function habilitarControles(carro, cena) {
             } else if (velocidade < 0) {
                 velocidade = Math.min(0, velocidade + ATRITO * dt);
             }
+        }
+
+        // Grama: se o carro esta fora do asfalto, a velocidade desce SUAVE
+        // ate o teto da grama (nao corta de uma vez).
+        const distAtual = distanciaDaPista(raiz.position.x, raiz.position.z);
+        const naGrama = distAtual > meiaPista;
+        if (naGrama && Math.abs(velocidade) > VEL_MAX_GRAMA) {
+            if (velocidade > 0) velocidade = Math.max(VEL_MAX_GRAMA, velocidade - DESACEL_GRAMA * dt);
+            else velocidade = Math.min(-VEL_MAX_GRAMA, velocidade + DESACEL_GRAMA * dt);
         }
 
         // Limita aos tetos de velocidade
@@ -287,6 +342,24 @@ function habilitarControles(carro, cena) {
 
         const ang = raiz.rotation.y;
         const dirFrente = new Vector3(Math.cos(ang), 0, -Math.sin(ang));
-        raiz.position.addInPlace(dirFrente.scale(velocidade * dt));
+        const passo = dirFrente.scale(velocidade * dt);
+
+        // Colisao: mede a partir da PONTA do carro na direcao do movimento
+        // (frente se anda pra frente, traseira se da re), nao do centro.
+        // Senao a frente/parabrisa entra na cerca antes do centro chegar.
+        const META_CARRO = 1.8; // ~metade do comprimento do carro
+        const sentido = velocidade >= 0 ? 1 : -1;
+        const pontaX = raiz.position.x + dirFrente.x * META_CARRO * sentido;
+        const pontaZ = raiz.position.z + dirFrente.z * META_CARRO * sentido;
+
+        const pontaNovaX = pontaX + passo.x;
+        const pontaNovaZ = pontaZ + passo.z;
+        const cercaAtual = distanciaDaCerca(pontaX, pontaZ);
+        const cercaNova = distanciaDaCerca(pontaNovaX, pontaNovaZ);
+        if (cercaNova > MARGEM_CERCA || cercaNova > cercaAtual) {
+            raiz.position.addInPlace(passo);
+        } else {
+            velocidade = 0;
+        }
     });
 }

@@ -180,9 +180,12 @@ function criarCenario(cena, pista) {
         return total;
     }
 
-    // Cria mureta + tela nos dois lados.
+    // Cria mureta + tela nos dois lados. Guarda as linhas das bordas da
+    // cerca pra a colisao do carro medir a distancia real ate elas.
+    const linhasCerca = [];
     for (const lado of [1, -1]) {
         const linha = linhaBorda(lado);
+        linhasCerca.push(linha);
         const nomeLado = lado === 1 ? "Esq" : "Dir";
         construirParede("muretaCerca" + nomeLado, linha, 0, MURETA_ALTURA, matMureta);
         construirParede("telaCerca" + nomeLado, linha, MURETA_ALTURA, MURETA_ALTURA + TELA_ALTURA, matTela);
@@ -271,4 +274,8 @@ function criarCenario(cena, pista) {
             arq.rotation.y = -anguloPista + ARQ_GIRO_EXTRA * lado;
         }
     });
+
+    // Retorna as linhas das duas bordas da cerca (pontos reais), pra a
+    // colisao do carro medir a distancia ate a cerca onde ela de fato esta.
+    return { linhasCerca };
 }

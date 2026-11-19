@@ -17,7 +17,7 @@ function criarCena(motor, canvas) {
     const pista = criarPistaMonza(cena);
 
     // Cercas e arquibancadas em volta da pista.
-    criarCenario(cena, pista);
+    const cenario = criarCenario(cena, pista);
 
     const carro = criarTwingo(cena);
 
@@ -27,8 +27,8 @@ function criarCena(motor, canvas) {
     carro.raiz.position.z = pista.largada.z;
     carro.raiz.rotation.y = pista.largada.rotacaoY;
 
-    // Liga o controle de movimento do carro (W A S D)
-    habilitarControles(carro, cena);
+    // Liga o controle de movimento do carro (W A S D), com grama e colisao
+    habilitarControles(carro, cena, pista, cenario.linhasCerca);
 
     // -----------------------------------------------------------------
     // Estado dia/noite (cor do ceu + intensidade das luzes do ambiente)
