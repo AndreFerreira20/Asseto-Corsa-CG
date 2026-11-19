@@ -16,6 +16,9 @@ function criarCena(motor, canvas) {
     // Pista de Monza (asfalto + grama). Substitui a reta de teste antiga.
     const pista = criarPistaMonza(cena);
 
+    // Cercas e arquibancadas em volta da pista.
+    criarCenario(cena, pista);
+
     const carro = criarTwingo(cena);
 
     // Posiciona o carro sobre a linha de largada, na posicao e direcao
