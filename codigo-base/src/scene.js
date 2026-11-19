@@ -30,6 +30,12 @@ function criarCena(motor, canvas) {
     // Liga o controle de movimento do carro (W A S D), com grama e colisao
     habilitarControles(carro, cena, pista, cenario.linhasCerca);
 
+    // Checkpoints da volta (caixas invisiveis). Por enquanto so avisa no console;
+    // o cronometro vai usar esses eventos.
+    criarCheckpoints(cena, pista, carro, (tipo, indice) => {
+        console.log("[checkpoint]", tipo, indice);
+    });
+
     // -----------------------------------------------------------------
     // Estado dia/noite (cor do ceu + intensidade das luzes do ambiente)
     const DIA = {
