@@ -53,9 +53,9 @@ function criarCheckpoints(cena, pista, carro, aoEvento) {
     
     const num_checkpoints = 6;     // contando a linha de chegada (ultimo)
     const largura_portao = 8;        // metros depois da borda da pista (ate a cerca)
-    const espessura_portao = 3;    
-    const altura_portao = 3;       
-    const mostra_portao = true; // true pra ver os portoes
+    const espessura_portao = 3;
+    const altura_portao = 3;
+    const mostra_portao = false; // true pra ver os portoes
 
     // Sensor do carro (adaptado pro twingo)
     const sensor_comprimento = 3.5;
