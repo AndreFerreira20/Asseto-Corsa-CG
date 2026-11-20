@@ -17,7 +17,7 @@ function calcularPortoes(pista, qtd) {
     const n = pontos.length;
 
     // Indice do ponto do caminho mais proximo da largada.
-    let idxLargada = pista.indiceLargada;
+    const idxLargada = pista.indiceLargada;
 
     const portoes = [];
     for (let k = 1; k <= qtd; k++) {
